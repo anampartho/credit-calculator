@@ -19,7 +19,7 @@ def calculate_annuity(credit_principal, nominal_interest, months):
 
 # Calculate Credit Principle
 def calculate_credit_principle(monthly_payment, nominal_interest, months):
-    return round(monthly_payment / ((nominal_interest * math.pow(1 + nominal_interest, months)) / (math.pow(1 + nominal_interest, months) - 1)))
+    return math.floor(monthly_payment / ((nominal_interest * math.pow(1 + nominal_interest, months)) / (math.pow(1 + nominal_interest, months) - 1)))
 
 # Command Line Argument Parsing
 parser = argparse.ArgumentParser()
@@ -49,63 +49,77 @@ months = int(args.periods) if args.periods != None else None
 credit_interest = float(args.interest) if args.interest != None else None
 monthly_payment = int(args.payment) if args.payment != None else None
 
+total_args = 5
+
+if not credit_interest:
+    total_args -= 1
+
+if not credit_principal:
+    total_args -= 1
+
+if not monthly_payment:
+    total_args -= 1
+
+if not months:
+    total_args -= 1
+    
 # String to be printed at end
 string = ''
 paid = 0
 
 # Validate User Action
-if action != 'diff' and action != 'annuity':
-    print('58 Incorrect parameters')
-
-
-# Diff
-if action == 'diff':
-    if monthly_payment != None or credit_principal == None or months == None or credit_interest == None:
-        print('64 Incorrect parameters')
-    else:
+if (action != 'diff' and action != 'annuity') or (action == 'diff' and monthly_payment != None) or credit_interest == None or total_args < 4:
+    string = 'Incorrect parameters'
+else:
+    # Diff
+    if action == 'diff':
         for count in range(1, months + 1):
             difference_payment = diff_payment(credit_principal, months, calculate_nominal_interest(credit_interest), count)
             paid += difference_payment
             string += 'Month {}: paid out {}\n'.format(count, difference_payment)
 
-if action == 'annuity':
-    if (credit_principal != None and months != None) or (credit_principal != None and (monthly_payment == None or credit_interest == None) or (months != None and (monthly_payment == None or credit_interest == None))):
-        print('77 Incorrect parameters')
+    if action == 'annuity':
+        if credit_principal != None and monthly_payment != None and months == None:
+            nominal_interest = calculate_nominal_interest(credit_interest)
+            months = calculate_n_payments(credit_principal, monthly_payment, nominal_interest)
 
-    elif credit_principal != None:
-        nominal_interest = calculate_nominal_interest(credit_interest)
-        months = calculate_n_payments(credit_principal, monthly_payment, nominal_interest)
+            if months % 1 != 0:
+                months = math.ceil(months)
 
-        if months % 1 != 0:
-            months = math.ceil(months)
+            paid = monthly_payment * months
 
-        year = months // 12
-        month = months % 12
-        if month == 1:
-            month_string = 'month'
-        else:
-            month_string = 'months'
+            year = months // 12
+            month = months % 12
+            if month == 1:
+                month_string = 'month'
+            else:
+                month_string = 'months'
 
-        if year == 1:
-            year_string = 'year'
-        else:
-            year_string = 'years'
+            if year == 1:
+                year_string = 'year'
+            else:
+                year_string = 'years'
+                
+            if year == 0:
+                string = 'You need {} {} to repay this credit!'.format(month, month_string)
+            elif month == 0:
+                string = 'You need {} {} to repay this credit!'.format(year, year_string)
+            else:
+                string = 'You need {} {} and {} {} to repay this credit!'.format(year, year_string, month, month_string)
+            string += '\n'
+        elif months != None and monthly_payment != None and credit_principal == None:
+            nominal_interest = calculate_nominal_interest(credit_interest)
+            credit_principal = calculate_credit_principle(monthly_payment, nominal_interest, months)
+            paid = months * monthly_payment
             
-        if year == 0:
-            string = 'You need {} {} to repay this credit!'.format(month, month_string)
-        elif month == 0:
-            string = 'You need {} {} to repay this credit!'.format(year, year_string)
+            string = 'Your credit principal = {}!'.format(credit_principal)
+            string += '\n'
         else:
-            string = 'You need {} {} and {} {} to repay this credit!'.format(year, year_string, month, month_string)
-        paid = int(months * monthly_payment)
-        string += '\n'
-    elif months != None:
-        nominal_interest = calculate_nominal_interest(credit_interest)
-        credit_principal = calculate_credit_principle(monthly_payment, nominal_interest, months)
-        string = 'Your credit principal = {}!'.format(credit_principal)
-        paid = int(months * monthly_payment)
-        string += '\n'
+            nominal_interest = calculate_nominal_interest(credit_interest)
+            annuity = calculate_annuity(credit_principal, nominal_interest, months)
+            paid = annuity * months
+            string += 'Your annuity payment = {}!'.format(annuity)
 
-string += '\nOverpayment = {}'.format(paid - credit_principal)
+    string += '\nOverpayment = {}'.format(math.ceil(paid - credit_principal))
 
 print(string)
