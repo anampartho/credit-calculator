@@ -42,7 +42,6 @@ parser.add_argument('--interest')
 # Parse passed arguments
 args = parser.parse_args()
 
-
 # Args data
 action = args.type
 credit_principal = int(args.principal) if args.principal != None else None
@@ -52,6 +51,7 @@ monthly_payment = int(args.payment) if args.payment != None else None
 
 # String to be printed at end
 string = ''
+paid = 0
 
 # Validate User Action
 if action != 'diff' and action != 'annuity':
@@ -63,8 +63,6 @@ if action == 'diff':
     if monthly_payment != None or credit_principal == None or months == None or credit_interest == None:
         print('64 Incorrect parameters')
     else:
-        paid = 0
-
         for count in range(1, months + 1):
             difference_payment = diff_payment(credit_principal, months, calculate_nominal_interest(credit_interest), count)
             paid += difference_payment
